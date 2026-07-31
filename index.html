@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EPCOT Wait Times</title>
+
+  <!-- External Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- D3.js, d3-annotation, TopoJSON, and SheetJS -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-annotation/2.5.1/d3-annotation.min.js"></script>
+  <script src="https://unpkg.com/topojson-client@3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Experimental Prototype Community of Ticketed Events</h1>
+      <img src="epcot_ball.png" alt="The iconic &quot;Golf Ball&quot; that greets EPCOT guests." width="743" height="400"/>
+      <p class="subtitle">Image Source: Disney</p>
+      <p class="quote">“EPCOT will be an experimental prototype community of tomorrow that will take its cue from the new ideas
+         and new technologies that are now emerging from the creative centers of American industry. It will be a community of 
+         tomorrow that will never be completed, but will always be introducing and testing and demonstrating new materials and 
+         systems. And EPCOT will always be a showcase to the world for the ingenuity and imagination of American free
+          enterprise.” - Walt Disney</p>
+      <p>Walt Disney World's second park, EPCOT (the 
+        "Experimental Prototype Community of Tomorrow"), opened on October 1, 1982 with a unique approach
+        to storytelling: half concept of the future, half showcase of world cultures
+        as they are today. As the park has evolved, it has become a central hub
+        for festival and special ticketed events year after year. Let's 
+        take a look at how these events shape wait times throughout the year
+        to see when are the best times to attend.</p>
+    </header>
+
+    <!-- Narrative Controller -->
+    <div class="stepper">
+      <button id="prev-btn" onclick="changeScene(-1)">← Back</button>
+      <button id="next-btn" onclick="changeScene(1)">Next Step →</button>
+      <span class="step-text" id="scene-indicator">Loading EPCOT data...</span>
+    </div>
+
+    <!-- Crowd Baseline Tracker -->
+    <div class="crowd-ribbon-container">
+      <div class="crowd-ribbon-title">
+        <span>EPCOT Average Crowd Level (%)</span>
+      </div>
+      <div id="crowd-sparkline" class="crowd-sparkline"></div>
+    </div>
+
+    <!-- Category Dropdown Controls -->
+    <div class="controls" id="exploration-controls">
+      <label>
+        <strong>Explore By Event Category:</strong>
+        <select id="event-select" onchange="updateExploration()">
+          <!-- Populated with all non-Average categories -->
+        </select>
+      </label>
+    </div>
+
+    <!-- Main Chart Stage -->
+    <div class="chart-container">
+      <div id="chart"></div>
+    </div>
+  </div>
+
+  <!-- Global Tooltip Element -->
+  <div id="tooltip" class="tooltip"></div>
+
+  <script>
+    // =========================================================================
+    // 1. DATA CONFIGURATION & MONTH MAPPINGS
+    // =========================================================================
+
+    const DATA_FILE_PATH = "epcot_wait_times.xlsx";
+
+    let ridesData = [];
+    let crowdMonthlyData = [];
+    let eventCategories = [];
+    let activeMetric = "Average";
+
+    const ALL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    const EVENT_MONTH_MAPPINGS = {
+      "festival of the arts": ['January', 'February'],
+      "flower and garden festival": ['March', 'April', 'May'],
+      "special ticketed event": ['February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October'],
+      "food and wine festival": ['August', 'September', 'October', 'November'],
+      "festival of the holidays": ['November', 'December'],
+      "extended evening": ALL_MONTHS,
+      "early entry": ALL_MONTHS
+    };
+
+    const EVENT_IMAGE_MAPPINGS = {
+      "festival of the arts": "farts.png",
+      "flower and garden festival": "flower_garden.png",
+      "special ticketed event": "ticketed_event.png",
+      "food and wine festival": "food_wine.png",
+      "festival of the holidays": "holidays.png",
+      "extended evening": "extended_hours.png",
+      "early entry": "early_entry.png"
+    };
+
+    const tooltip = d3.select("#tooltip");
+
+    function showTooltip(htmlContent, event) {
+      tooltip.style("opacity", 1)
+        .html(htmlContent)
+        .style("left", (event.clientX + 12) + "px")
+        .style("top", (event.clientY - 28) + "px");
+    }
+
+    function moveTooltip(event) {
+      tooltip
+        .style("left", (event.clientX + 12) + "px")
+        .style("top", (event.clientY - 28) + "px");
+    }
+
+    function hideTooltip() {
+      tooltip.style("opacity", 0);
+    }
+
+    async function loadBundledExcelData() {
+      try {
+        const response = await fetch(DATA_FILE_PATH);
+        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+        const arrayBuffer = await response.arrayBuffer();
+        const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rawJson = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        const rideHeaders = rawJson[0];
+        const rideRows = rawJson.slice(1, 15);
+
+        ridesData = rideRows.map(row => {
+          let obj = {};
+          rideHeaders.forEach((h, idx) => {
+            if (h) {
+              let val = row[idx];
+              obj[h.trim()] = (val === '-' || val === undefined) ? 0 : Number(val) || val;
+            }
+          });
+          return obj;
+        }).filter(d => d.Ride);
+
+        eventCategories = Object.keys(ridesData[0]).filter(col => 
+          col.toLowerCase() !== 'ride' && col.toLowerCase() !== 'average'
+        );
+
+        const crowdRows = rawJson.slice(17, 29);
+        crowdMonthlyData = crowdRows.map(row => ({
+          month: row[0],
+          level: Number(row[1]) || 0
+        })).filter(d => d.month && String(d.month).toLowerCase() !== 'month');
+
+        populateCategoryDropdown();
+        renderCrowdSparkline();
+        renderScene(0);
+      } catch (e) {
+        console.warn("Using fallback dataset due to fetch error:", e);
+      }
+    }
+
+    function populateCategoryDropdown() {
+      const select = d3.select("#event-select");
+      select.selectAll("option").remove();
+
+      eventCategories.forEach(cat => {
+        select.append("option")
+          .attr("value", cat)
+          .text(cat);
+      });
+    }
+
+    // =========================================================================
+    // 2. CROWD BASELINE TRACKER WITH SMOOTH ANIMATED NODES
+    // =========================================================================
+    function renderCrowdSparkline() {
+      const container = d3.select("#crowd-sparkline");
+      container.selectAll("*").remove();
+
+      const bbox = container.node().getBoundingClientRect();
+      const margin = { top: 10, right: 20, bottom: 20, left: 20 };
+      const width = (bbox.width || 860) - margin.left - margin.right;
+      const height = 70 - margin.top - margin.bottom;
+
+      const svg = container.append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+      const x = d3.scalePoint()
+        .domain(crowdMonthlyData.map(d => d.month))
+        .range([0, width]);
+
+      const y = d3.scaleLinear()
+        .domain([0, 100])
+        .range([height, 0]);
+
+      const area = d3.area()
+        .x(d => x(d.month))
+        .y0(height)
+        .y1(d => y(d.level))
+        .curve(d3.curveMonotoneX);
+
+      svg.append("path")
+        .datum(crowdMonthlyData)
+        .attr("class", "sparkline-area")
+        .attr("d", area);
+
+      const line = d3.line()
+        .x(d => x(d.month))
+        .y(d => y(d.level))
+        .curve(d3.curveMonotoneX);
+
+      svg.append("path")
+        .datum(crowdMonthlyData)
+        .attr("class", "sparkline-path")
+        .attr("d", line);
+
+      // Render dots with smooth entry transition
+      svg.selectAll(".crowd-node")
+        .data(crowdMonthlyData)
+        .enter()
+        .append("circle")
+        .attr("class", "crowd-node")
+        .attr("id", d => `node-${String(d.month).trim()}`)
+        .attr("cx", d => x(d.month))
+        .attr("cy", d => y(d.level))
+        .attr("r", 0)
+        .style("fill", "#cbd5e1")
+        .on("mouseover", (event, d) => {
+          showTooltip(`<strong>${d.month}</strong><br/>Average Crowd Level: <strong>${d.level}%</strong>`, event);
+        })
+        .on("mousemove", (event) => moveTooltip(event))
+        .on("mouseout", hideTooltip)
+        .transition()
+        .duration(600)
+        .delay((d, i) => i * 30)
+        .attr("r", 4);
+
+      svg.selectAll(".month-label")
+        .data(crowdMonthlyData)
+        .enter()
+        .append("text")
+        .attr("x", d => x(d.month))
+        .attr("y", height + 15)
+        .attr("text-anchor", "middle")
+        .style("font-size", "10px")
+        .style("fill", "#64748b")
+        .text(d => d.month);
+    }
+
+    // Smooth grow-in (r: 7, red) and grow-out (r: 4, gray) transition
+    function highlightCrowdMonths(months) {
+      const activeMonths = (months || []).map(m => String(m).trim().toLowerCase());
+
+      d3.selectAll(".crowd-node")
+        .transition()
+        .duration(400)
+        .ease(d3.easeCubicInOut)
+        .attr("r", d => {
+          const m = String(d.month).trim().toLowerCase();
+          return activeMonths.includes(m) ? 7.5 : 4; // Grows to 7.5 when active, shrinks to 4 when inactive
+        })
+        .style("fill", d => {
+          const m = String(d.month).trim().toLowerCase();
+          return activeMonths.includes(m) ? "#ef4444" : "#cbd5e1"; // Red when active, gray when inactive
+        })
+        .style("stroke", "none")
+        .style("stroke-width", "0px");
+    }
+
+    function highlightCategoryMonths(categoryName) {
+      if (!categoryName) {
+        highlightCrowdMonths([]);
+        return;
+      }
+      
+      const key = String(categoryName).toLowerCase().trim();
+      let matchedMonths = [];
+
+      for (const [evtName, months] of Object.entries(EVENT_MONTH_MAPPINGS)) {
+        if (key.includes(evtName) || evtName.includes(key)) {
+          matchedMonths = months;
+          break;
+        }
+      }
+
+      highlightCrowdMonths(matchedMonths);
+    }
+
+    // =========================================================================
+    // 3. MAIN RIDE CHART SETUP WITH WORKING TOOLTIPS
+    // =========================================================================
+    const margin = { top: 60, right: 40, bottom: 120, left: 60 };
+    const width = 900 - margin.left - margin.right;
+    const height = 420 - margin.top - margin.bottom;
+
+    const svg = d3.select("#chart")
+      .append("svg")
+      .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const xScale = d3.scaleBand().range([0, width]).padding(0.3);
+    const yScale = d3.scaleLinear().range([height, 0]);
+
+    const xAxisGroup = svg.append("g").attr("transform", `translate(0,${height})`);
+    const yAxisGroup = svg.append("g");
+
+    svg.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", -45)
+      .attr("x", -height / 2)
+      .attr("text-anchor", "middle")
+      .style("fill", "#3182ce")
+      .style("font-weight", "bold")
+      .text("Average Wait Time (Minutes)");
+
+    function drawChart(metricKey) {
+      xScale.domain(ridesData.map(d => d.Ride));
+      yScale.domain([0, Math.max(85, d3.max(ridesData, d => Number(d[metricKey]) || 0) * 1.2)]);
+
+      xAxisGroup.call(d3.axisBottom(xScale))
+        .selectAll("text")
+        .attr("transform", "rotate(-35)")
+        .style("text-anchor", "end")
+        .style("font-size", "10px");
+
+      yAxisGroup.call(d3.axisLeft(yScale));
+
+      const bars = svg.selectAll(".bar").data(ridesData, d => d.Ride);
+
+      bars.exit().remove();
+
+      const barsEnter = bars.enter()
+        .append("rect")
+        .attr("class", "bar")
+        .attr("fill", "#3182ce")
+        .attr("x", d => xScale(d.Ride))
+        .attr("width", xScale.bandwidth())
+        .attr("y", height)
+        .attr("height", 0);
+
+      const mergedBars = barsEnter.merge(bars);
+
+      mergedBars
+        .on("mouseover", (event, d) => {
+          const val = d[metricKey] !== undefined ? d[metricKey] : 'N/A';
+          showTooltip(`<strong>${d.Ride}</strong><br/>${metricKey}: <strong>${val} mins</strong>`, event);
+        })
+        .on("mousemove", (event) => moveTooltip(event))
+        .on("mouseout", hideTooltip);
+
+      mergedBars
+        .transition()
+        .duration(850)
+        .ease(d3.easeCubicOut)
+        .attr("x", d => xScale(d.Ride))
+        .attr("width", xScale.bandwidth())
+        .attr("y", d => yScale(Number(d[metricKey]) || 0))
+        .attr("height", d => height - yScale(Number(d[metricKey]) || 0));
+    }
+
+    // =========================================================================
+    // 4. NARRATIVE SCENE SYSTEM
+    // =========================================================================
+    const scenes = [
+      {
+        title: "Hope you Like Lots of People!",
+        render: () => {
+          activeMetric = "Average";
+          drawChart(activeMetric);
+          highlightCrowdMonths(['January', 'February', 'March', 'December']);
+
+          const annotations = [
+            {
+              note: {
+                title: "Holiday & Spring Break Surges",
+                label: "Park capacity hits peaks in Winter (65-66%) and March Spring Break (67%).",
+                wrap: 250
+              },
+              x: width / 2,
+              y: 10,
+              x: 200,
+              dx: 0, 
+              dy: 0
+            }
+          ];
+          setAnnotations(annotations);
+        }
+      },
+      {
+        title: "The Party Never Stops... Except in Summer",
+        render: () => {
+          activeMetric = "Average";
+          drawChart(activeMetric);
+          highlightCrowdMonths(['June', 'July', 'August']);
+
+          const annotations = [
+            {
+              note: {
+                title: "Summer Break Lull",
+                label: "Summer break lazes with annual low of 28-31%. Notably, no festivals occur during this time.",
+                wrap: 250
+              },
+              x: width / 2,
+              y: 10,
+              //x: 200,
+              dx: 0, 
+              dy: 0
+            }
+          ];
+          setAnnotations(annotations);
+        }
+      },
+            {
+        title: "Back and Better Than Ever!",
+        render: () => {
+          activeMetric = "Average";
+          drawChart(activeMetric);
+          highlightCrowdMonths([]);
+          
+          const tt = ridesData.find(d => d.Ride.includes("Test Track")) || { Ride: "Test Track", Average: 59 };
+
+          const annotations = [
+            {
+              note: {
+                title: "Kachow! Err, wrong ride...",
+                label: `Test Track averaged ${tt.Average} minutes after closed for half the year due to a reimagining.`,
+                wrap: 180
+              },
+              x: xScale(tt.Ride) + xScale.bandwidth() / 2,
+              y: yScale(tt.Average),
+              dx: 30, 
+              dy: -30
+            }
+          ];
+          setAnnotations(annotations);
+        }
+      },
+      {
+        title: "The Top (Cosmic) Dog",
+        render: () => {
+          activeMetric = "Average";
+          drawChart(activeMetric);
+          highlightCrowdMonths([]);
+          
+          const guardians = ridesData.find(d => d.Ride.includes("Guardians")) || { Ride: "Guardians of the Galaxy: Cosmic Rewind", Average: 60 };
+
+          const annotations = [
+            {
+              note: {
+                title: "It's that good!",
+                label: `Cosmic Rewind leads all year-round EPCOT attractions with an average ${guardians.Average} min wait.`,
+                wrap: 180
+              },
+              x: xScale(guardians.Ride) + xScale.bandwidth() / 2,
+              y: yScale(guardians.Average),
+              dx: 35, 
+              dy: -30
+            }
+          ];
+          setAnnotations(annotations);
+        }
+      },
+      {
+        title: "Reliable Loaders",
+        render: () => {
+          activeMetric = "Average";
+          drawChart(activeMetric);
+          highlightCrowdMonths([]);
+
+          const land = ridesData.find(d => d.Ride.includes("Living with the Land")) || { Ride: "Living with the Land", Average: 9 };
+          const gran = ridesData.find(d => d.Ride.includes("Gran Fiesta")) || { Ride: "Gran Fiesta Tour Starring The Three Cabelleros", Average: 9 };
+
+          const annotations = [
+            {
+              note: {
+                title: "Must be A Boat Ride Thing",
+                label: `${land.Ride} and ${gran.Ride} averaged only ${land.Average} minutes. You know you can rely on these boat rides for a good time (or a relaxing nap)!`,
+                wrap: 200
+              },
+              x: xScale(land.Ride) + xScale.bandwidth() / 2,
+              y: yScale(land.Average),
+              dx: 20, 
+              dy: -50
+            }
+          ];
+          setAnnotations(annotations);
+        }
+      },
+      {
+        title: "Explore How Festivals Affect Wait Times!",
+        render: () => {
+          setAnnotations([]);
+          updateExploration();
+        }
+      }
+    ];
+
+    let currentScene = 0;
+
+    function renderScene(index) {
+      d3.select("#scene-indicator").text(`${scenes[index].title}`);
+      
+      d3.select("#prev-btn").property("disabled", index === 0);
+      d3.select("#next-btn").property("disabled", index === scenes.length - 1);
+
+      const controls = d3.select("#exploration-controls");
+
+      if (index === scenes.length - 1) {
+        controls.classed("unlocked", true);
+      } else {
+        controls.classed("unlocked", false);
+      }
+
+      scenes[index].render();
+    }
+
+    function setAnnotations(annotationList) {
+      svg.selectAll(".annotation-group").remove();
+      svg.selectAll(".exploration-image-group").remove();
+      if (annotationList.length === 0) return;
+
+      const makeAnnotations = d3.annotation()
+        .type(d3.annotationCalloutElbow)
+        .annotations(annotationList);
+
+      svg.append("g")
+        .attr("class", "annotation-group")
+        .style("pointer-events", "none")
+        .call(makeAnnotations);
+    }
+
+    function changeScene(direction) {
+      currentScene += direction;
+      currentScene = Math.max(0, Math.min(scenes.length - 1, currentScene));
+      renderScene(currentScene);
+    }
+
+    // =========================================================================
+    // 5. EXPLORATION INTERACTIVITY
+    // =========================================================================
+    function renderExplorationImage(categoryName) {
+
+    svg.selectAll(".exploration-image-group").remove();
+
+    if (!categoryName) return;
+
+    const key = String(categoryName).toLowerCase().trim();
+    let imageFile = null;
+
+  for (const [evtName, imgPath] of Object.entries(EVENT_IMAGE_MAPPINGS)) {
+    if (key.includes(evtName) || evtName.includes(key)) {
+      imageFile = imgPath;
+      break;
+    }
+  }
+
+  // If no matching image found, exit early
+  if (!imageFile) return;
+
+  const imgWidth = 140;
+  const imgHeight = 90;
+
+  // Position image at top-right corner of chart stage
+  const imgGroup = svg.append("g")
+    .attr("class", "exploration-image-group")
+    .style("pointer-events", "none");
+
+  imgGroup.append("image")
+    .attr("href", imageFile)
+    .attr("xlink:href", imageFile)
+    .attr("x", width - imgWidth - 10)
+    .attr("y", 10)
+    .attr("width", imgWidth)
+    .attr("height", imgHeight)
+    .attr("preserveAspectRatio", "xMidYMid slice")
+    .style("opacity", 0)
+    .transition()
+    .duration(500)
+    .style("opacity", 0.95);
+}
+    
+    function updateExploration() {
+      const selectNode = d3.select("#event-select").node();
+      if (!selectNode || !selectNode.options || selectNode.options.length === 0) return;
+
+      // Ensure a default selection is set if none is active
+      if (!selectNode.value) {
+        selectNode.selectedIndex = 0;
+      }
+
+      const selectedMetric = selectNode.value;
+      if (selectedMetric) {
+        activeMetric = selectedMetric;
+        drawChart(activeMetric);
+        highlightCategoryMonths(activeMetric);
+        renderExplorationImage(activeMetric);
+      }
+    }
+
+    // Run file loader on startup
+    loadBundledExcelData();
+  </script>
+</body>
+</html>

@@ -1,0 +1,387 @@
+/* Base Layout & Typography */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #2d3748;
+  background-color: #e1f6ff;
+  margin: 0;
+  padding: 20px;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+header {
+  margin-bottom: 24px;
+}
+
+h1 {
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+  color: #1a202c;
+  font-family:Verdana, Geneva, Tahoma, sans-serif
+}
+
+.subtitle {
+  color: #4a5568;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* Dedicated Crowd Baseline Widget */
+.crowd-ribbon-container {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+}
+
+.crowd-ribbon-title {
+  font-size: 0.85em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.quote {
+  font-size: 1.2em;
+  font-style: oblique;
+  color:#ce7031
+}
+
+.crowd-summary-badge {
+  color: #ef4444;
+  font-weight: bold;
+}
+
+.crowd-sparkline {
+  width: 100%;
+  height: 70px;
+}
+
+.crowd-node {
+  fill: #ef4444;
+  transition: r 0.2s ease, fill 0.2s ease;
+}
+
+.crowd-node.highlighted {
+  r: 6;
+  fill: #b91c1c;
+}
+
+.sparkline-path {
+  fill: none;
+  stroke: #f87171;
+  stroke-width: 2.5;
+}
+
+.sparkline-area {
+  fill: rgba(239, 68, 68, 0.08);
+}
+
+.month-label {
+  font-size: 10px;
+  fill: #64748b;
+}
+
+/* Narrative Stepper Controls */
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+button {
+  background-color: #ff65e5;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button:hover:not(:disabled) {
+  background-color: #f822ff;
+}
+
+button:disabled {
+  background-color: #cbd5e0;
+  cursor: not-allowed;
+}
+
+.step-text {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+/* Exploration Mode Controls */
+.controls {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 12px;
+  background-color: #ebf8ff;
+  border: 1px solid #bee3f8;
+  border-radius: 6px;
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.controls.unlocked {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.controls select {
+  margin-left: 8px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e0;
+  background-color: #ffffff;
+}
+
+.unlocked-badge {
+  margin-left: auto;
+  font-style: italic;
+  font-size: 0.9em;
+  color: #2b6cb0;
+}
+
+/* Main Chart Stage & Tooltip */
+.chart-container {
+  position: relative;
+  width: 100%;
+}
+
+.bar {
+  transition: fill 0.2s ease;
+}
+
+.bar:hover {
+  fill: #2b6cb0;
+}
+
+.axis-label {
+  fill: #3182ce;
+  font-weight: bold;
+}
+
+.x-axis-text {
+  font-size: 10px;
+}
+
+.tooltip {
+  position: absolute;
+  padding: 8px 12px;
+  background: rgba(26, 32, 44, 0.9);
+  color: white;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Container & Layout */
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Header */
+header h1 {
+  font-size: 1.8rem;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+header .subtitle {
+  font-size: 0.95rem;
+  color: #475569;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+/* Stepper Controls */
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.stepper button {
+  padding: 8px 16px;
+  background-color: #68005a;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.stepper button:hover:not(:disabled) {
+  background-color: #ff0cd7;
+}
+
+.stepper button:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.step-text {
+  font-weight: 600;
+  color: #334155;
+  font-size: 0.95rem;
+}
+
+/* Ribbon for Monthly Crowd Baseline */
+.crowd-ribbon-container {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+}
+
+.crowd-ribbon-title {
+  font-size: 0.85em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.crowd-sparkline {
+  width: 100%;
+  height: 70px;
+}
+
+.crowd-node {
+  fill: #cbd5e1;
+  cursor: pointer;
+  transition: r 0.2s ease, fill 0.2s ease;
+}
+
+.crowd-node:hover,
+.crowd-node.highlighted {
+  r: 6.5;
+  fill: #ef4444;
+}
+
+.sparkline-path {
+  fill: none;
+  stroke: #94a3b8;
+  stroke-width: 2;
+}
+
+.sparkline-area {
+  fill: rgba(148, 163, 184, 0.1);
+}
+
+/* Controls Section */
+.controls {
+  margin-bottom: 16px;
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.controls.unlocked {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Chart Container & Overflow Fix */
+.chart-container {
+  position: relative;
+  width: 100%;
+}
+
+.chart-container svg {
+  width: 100%;
+  height: auto;
+  overflow: visible !important; /* Prevents annotations from being cut off by SVG borders */
+}
+
+/* Bar Hover Effect */
+.bar {
+  cursor: pointer;
+  transition: fill 0.2s ease;
+}
+
+.bar:hover {
+  fill: #1d4ed8 !important;
+}
+
+/* Annotation Styling & Positioning Fixes */
+.annotation-group {
+  font-size: 12px;
+}
+
+.annotation-note-title {
+  font-weight: bold;
+  fill: #0f172a;
+}
+
+.annotation-note-label {
+  fill: #334155;
+}
+
+.annotation-note-bg {
+  /* fill: #ffffff;
+  fill-opacity: 0.9;
+  stroke: #cbd5e1;
+  stroke-width: 1px;
+  rx: 4px; */
+}
+
+.annotation path {
+  /* stroke: #2563eb;
+  stroke-width: 1.5px; */
+}
+
+.annotation-connector .connector {
+  stroke: #2563eb;
+  stroke-dasharray: 3, 3;
+}
+
+/* Shared Fixed Tooltip Styling */
+.tooltip {
+  position: fixed;
+  text-align: center;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: sans-serif;
+  background: rgba(15, 23, 42, 0.9);
+  color: #ffffff;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+  z-index: 9999;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
