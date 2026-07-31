@@ -18,8 +18,8 @@
 
   <div class="container">
     <header>
-      <h1>Experimental Prototype Community of Ticketed Events</h1>
-      <img src="epcot_ball.png" alt="The iconic &quot;Golf Ball&quot; that greets EPCOT guests." width="743" height="400"/>
+      <h1 style="text-align: center;">Experimental Prototype Community of Ticketed Events</h1>
+      <img src="epcot_ball.png" alt="The iconic &quot;Golf Ball&quot; that greets EPCOT guests." width="743" height="400" style="display: flex; justify-content: center; align-items: center;"/>
       <p class="subtitle">Image Source: Disney</p>
       <p class="quote">“EPCOT will be an experimental prototype community of tomorrow that will take its cue from the new ideas
          and new technologies that are now emerging from the creative centers of American industry. It will be a community of 
@@ -31,7 +31,7 @@
         to storytelling: half concept of the future, half showcase of world cultures
         as they are today. As the park has evolved, it has become a central hub
         for festival and special ticketed events year after year. Let's 
-        take a look at how these events shape wait times throughout the year
+        take a look at how these events shaped wait times throughout 2025
         to see when are the best times to attend.</p>
     </header>
 
@@ -94,13 +94,58 @@
     };
 
     const EVENT_IMAGE_MAPPINGS = {
-      "festival of the arts": "farts.png",
-      "flower and garden festival": "flower_garden.png",
-      "special ticketed event": "ticketed_event.png",
+      "festival of the arts": "farts.jpg",
+      "flower and garden festival": "flower_garden.jpg",
+      "special ticketed event": "ticketed_event.jpg",
       "food and wine festival": "food_wine.png",
-      "festival of the holidays": "holidays.png",
-      "extended evening": "extended_hours.png",
-      "early entry": "early_entry.png"
+      "festival of the holidays": "holidays.jpg",
+      "extended evening": "extended_hours.jpg",
+      "early entry": "early_entry.jpg"
+    };
+
+    const EVENT_ANNOTATION_MAPPINGS = {
+      "festival of the arts": [
+        {
+          note: { label: "This exposition of local and international artistry runs January to February alongside crowd level peaks.", wrap: 200 },
+          x: 250, y: 0
+        }
+      ],
+      "flower and garden festival": [
+        {
+          note: { label: "Massive floral displays specially grown months in advance hit the spring break crowds. E-Ticket attraction Cosmic Rewind reaches its year-long peak in the absence of Test Track.", wrap: 200 },
+          x: 250, y: 0
+        }
+      ],
+      "food and wine festival": [
+        {
+          note: { label: "EPCOT's longest festival tailored toward celebrating the harvest. After Test Track's reopening, its average wait time surpasses Cosmic Rewind.", wrap: 200 },
+          x: 250, y: 0
+        }
+      ],
+      "festival of the holidays": [
+        {
+          note: { label: "In this celebration of the winter season, most wait times are as expected, although Living with the Land has increased slightly due to its seasonal holiday overlay.", wrap: 200 },
+          x: 250, y: 0
+        }
+      ],
+      "early entry":[
+        {
+          note: { label: "Early entry is a benefit for select resort guests where they can enter the park 30 minutes early, every day of the year. The main benefit of this offering is greatly reduced wait times before general admission guests arrive.", wrap: 200 },
+          x: 250, y: 0
+        }
+      ],
+      "extended evening":[
+        {
+          note: { label: "Extended evenings occur every Monday of the year. This is the night owl equivalent for resort guests that would like to stay just a little longer to experience lower wait times.", wrap: 200 },
+          x: 250, y: 0
+        }
+      ],
+      "special ticketed event":[
+        {
+          note: { label: "Special ticketed events like After Hours occur sporadically throughout the year. Since these are extra-cost events outside of a standard park ticket, wait times are typically much lower, although high-demand rides like Test Track tend to have longer lines due to the allure of a riding a high-thrill attraction at night.", wrap: 200 },
+          x:250, y:0
+        }
+      ]
     };
 
     const tooltip = d3.select("#tooltip");
@@ -512,6 +557,8 @@
       d3.select("#prev-btn").property("disabled", index === 0);
       d3.select("#next-btn").property("disabled", index === scenes.length - 1);
 
+      svg.selectAll(".exploration-image-group").remove();
+
       const controls = d3.select("#exploration-controls");
 
       if (index === scenes.length - 1) {
@@ -525,7 +572,7 @@
 
     function setAnnotations(annotationList) {
       svg.selectAll(".annotation-group").remove();
-      svg.selectAll(".exploration-image-group").remove();
+      //svg.selectAll(".exploration-image-group").remove();
       if (annotationList.length === 0) return;
 
       const makeAnnotations = d3.annotation()
@@ -556,36 +603,36 @@
     const key = String(categoryName).toLowerCase().trim();
     let imageFile = null;
 
-  for (const [evtName, imgPath] of Object.entries(EVENT_IMAGE_MAPPINGS)) {
-    if (key.includes(evtName) || evtName.includes(key)) {
-      imageFile = imgPath;
-      break;
+    for (const [evtName, imgPath] of Object.entries(EVENT_IMAGE_MAPPINGS)) {
+      if (key.includes(evtName) || evtName.includes(key)) {
+        imageFile = imgPath;
+        break;
+      }
     }
-  }
 
-  // If no matching image found, exit early
-  if (!imageFile) return;
+    // If no matching image found, exit early
+    if (!imageFile) return;
 
-  const imgWidth = 140;
-  const imgHeight = 90;
+    const imgWidth = 300;
+    const imgHeight = 200;
 
-  // Position image at top-right corner of chart stage
-  const imgGroup = svg.append("g")
-    .attr("class", "exploration-image-group")
-    .style("pointer-events", "none");
+    // Position image at top-right corner of chart stage
+    const imgGroup = svg.append("g")
+      .attr("class", "exploration-image-group")
+      .style("pointer-events", "none");
 
-  imgGroup.append("image")
-    .attr("href", imageFile)
-    .attr("xlink:href", imageFile)
-    .attr("x", width - imgWidth - 10)
-    .attr("y", 10)
-    .attr("width", imgWidth)
-    .attr("height", imgHeight)
-    .attr("preserveAspectRatio", "xMidYMid slice")
-    .style("opacity", 0)
-    .transition()
-    .duration(500)
-    .style("opacity", 0.95);
+    imgGroup.append("image")
+      .attr("href", imageFile)
+      .attr("xlink:href", imageFile)
+      .attr("x", width - imgWidth - 10)
+      .attr("y", -50)
+      .attr("width", imgWidth)
+      .attr("height", imgHeight)
+      .attr("preserveAspectRatio", "xMidYMid slice")
+      .style("opacity", 0)
+      .transition()
+      .duration(500)
+      .style("opacity", 0.95);
 }
     
     function updateExploration() {
@@ -603,7 +650,28 @@
         drawChart(activeMetric);
         highlightCategoryMonths(activeMetric);
         renderExplorationImage(activeMetric);
+        renderExplorationAnnotations(activeMetric);
       }
+    }
+
+    function renderExplorationAnnotations(categoryName) {
+      if (!categoryName) {
+        setAnnotations([]);
+        return;
+      }
+
+      const key = String(categoryName).toLowerCase().trim();
+      let matchedAnnotations = [];
+
+      for (const [evtName, annos] of Object.entries(EVENT_ANNOTATION_MAPPINGS)) {
+        if (key.includes(evtName) || evtName.includes(key)) {
+          matchedAnnotations = annos;
+          break;
+        }
+      }
+
+      // Uses your existing setAnnotations function to draw them on the SVG
+      setAnnotations(matchedAnnotations);
     }
 
     // Run file loader on startup

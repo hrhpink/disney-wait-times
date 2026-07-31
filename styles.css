@@ -385,3 +385,8 @@ header .subtitle {
   z-index: 9999;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
 }
+
+.exploration-image-group image {
+  clip-path: inset(0px round 8px);
+  filter: drop-shadow(3px 6px 6px rgba(0, 0, 0, 0.15));
+}
