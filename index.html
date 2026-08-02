@@ -646,9 +646,9 @@
       const key = String(categoryName).toLowerCase().trim();
       let matchedAnnotations = [];
 
-      for (const [evtName, annos] of Object.entries(EVENT_ANNOTATION_MAPPINGS)) {
-        if (key.includes(evtName) || evtName.includes(key)) {
-          matchedAnnotations = annos;
+      for (const [eventName, annotations] of Object.entries(EVENT_ANNOTATION_MAPPINGS)) {
+        if (key.includes(eventName) || eventName.includes(key)) {
+          matchedAnnotations = annotations;
           break;
         }
       }
