@@ -5,9 +5,8 @@
   font-style: normal;
 }
 
-/*Helps with keeping crowd level banner within container when tab condensed*/
 #crowd-trendline svg {
-  overflow: visible !important;
+  overflow: visible;
 }
 
 .quote {
@@ -16,14 +15,11 @@
   color: #ce7031;
 }
 
-/* Switch scene control */
 .sceneSwitch {
   display: flex;
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #e2e8f0;
 }
 .sceneSwitch button {
   padding: 8px 16px;
@@ -39,14 +35,13 @@
   background-color: #ff0cd7;
 }
 .sceneSwitch button:disabled {
-  background-color: #cbd5e1;
+  background-color: #c7d0db;
   cursor: not-allowed;
 }
 
-/* Crowd level banner */
 .crowd-banner-container {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: #f7f9fc;
+  border: 1px solid #b4c0cf;
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 20px;
@@ -54,40 +49,35 @@
 .crowd-banner-title {
   font-size: 0.85em;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #64748b;
+  color: #5e6d83;
   margin-bottom: 8px;
   display: flex;
   justify-content: space-between;
 }
 .crowd-node {
-  fill: #cbd5e1;
   cursor: pointer;
   transition: r 0.2s ease, fill 0.2s ease;
 }
 
 .trendline-path {
   fill: none;
-  stroke: #94a3b8;
+  stroke: #3d4857;
   stroke-width: 2;
 }
 .trendline-area {
   fill: rgba(148, 163, 184, 0.1);
 }
 
-/* Dropdown */
 .controls {
   display: flex;
   align-items: center;
   margin-bottom: 16px;
   padding: 12px;
-  background-color: #ebf8ff;
-  border: 1px solid #bee3f8;
+  color:#5e6d83;
+  background-color: #e7f7ff;
+  border: 1px solid #b4c0cf;
   border-radius: 6px;
   opacity: 0.5;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
 }
 
 .controls.unlocked {
@@ -103,13 +93,12 @@
   background-color: #ffffff;
 }
 
-/* Chart */
 .bar {
   cursor: pointer;
   transition: fill 0.2s ease;
 }
 .bar:hover {
-  fill: #1d4ed8 !important;
+  fill: #872EFF;
 }
 .tooltip {
   position: fixed;
